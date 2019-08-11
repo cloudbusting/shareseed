@@ -5,25 +5,32 @@ import (
 	"os"
 )
 
-func MakeFiles(parts int, threshold int, prefix string, device string, shares []string) error {
-	var partsGuidance, deviceGuidance, thresholdGuidance string
+func MakeFiles(parts int, threshold int, prefix string, cryptocurrency string, shares []string) error {
+	var partsGuidance, cryptocurrencyGuidance, thresholdGuidance string
 
 	partsGuidance = fmt.Sprintf("This file contains a shared secret, one of %d parts comprising a BIP39 seed.", parts)
 
-	if device == "" {
-		deviceGuidance = fmt.Sprintf("Information to identity the source device was not provided. It is likely a small USB device or a something that looks like a calculator")
+	if cryptocurrency == "" {
+		cryptocurrencyGuidance = fmt.Sprintf("Information to identity the applicable cryptocurrency was not provided. It may be Bitcoin, or potenially many cryptocurrencies.")
 	} else {
-		deviceGuidance = fmt.Sprintf("The seed originated in device '%s'", device)
+		cryptocurrencyGuidance = fmt.Sprintf("The seed applied to the cryptocurrency '%s'", cryptocurrency)
 	}
 
-	thresholdGuidance = fmt.Sprintf("To recover the secret, %d other parts of the share must be combined (using this tool)", threshold)
+	var partsMaybePlural string
+	if threshold <= 2 {
+		partsMaybePlural = "part"
+	} else {
+		partsMaybePlural = "parts"
+	}
+	thresholdGuidance = fmt.Sprintf("To recover the secret, at least %d other %s of the share set (%d in total) must be combined", threshold-1, partsMaybePlural, threshold)
 
 	for i := 0; i < parts; i++ {
 		template := `---
 information:
   aboutThisFile: ` + partsGuidance + `
-  sourceDevice: ` + deviceGuidance + `
+  cryptocurrency: ` + cryptocurrencyGuidance + `
   recoveryAdvice: ` + thresholdGuidance + `
+  toolLocation: The tool used to create the shared secrets and to recombine them can be found at https://github.com/cloudbusting/shareseed
   whatIsASeed: A BIP39 seed is used to derive public/private key pairs, in this case to secure cryptocurreny (e.g. Bitcoin)
   whatShouldIDoWithTheRecoveredSecret: If you have sufficient shares to recombine and recover the secret, you should initialise a hardware wallet, using the seed to recover the addresses and stored funds
 share: %s`

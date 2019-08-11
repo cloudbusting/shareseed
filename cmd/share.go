@@ -54,7 +54,7 @@ Note that specifying the mnemonic seed phrase using the --mnemonic flag may leav
 		parts, _ := cmd.Flags().GetInt("parts")
 		threshold, _ := cmd.Flags().GetInt("threshold")
 		prefix, _ := cmd.Flags().GetString("prefix")
-		device, _ := cmd.Flags().GetString("device")
+		cryptocurrency, _ := cmd.Flags().GetString("cryptocurrency")
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		fileparts, _ := cmd.Flags().GetBool("fileparts")
 
@@ -62,7 +62,7 @@ Note that specifying the mnemonic seed phrase using the --mnemonic flag may leav
 			return err
 		}
 
-		return execute(mnemonic, parts, threshold, prefix, device, fileparts)
+		return execute(mnemonic, parts, threshold, prefix, cryptocurrency, quiet, fileparts)
 	},
 }
 
@@ -71,7 +71,7 @@ func init() {
 	shareCmd.Flags().IntP("parts", "p", 5, "The number of parts to produce")
 	shareCmd.Flags().IntP("threshold", "t", 3, "The number of parts required in combination to reproduce the BIP39 mnemonic")
 	shareCmd.Flags().String("prefix", "", "A prefix for the shared part number. Helps identify part sets, e.g. 'BTC'")
-	shareCmd.Flags().String("device", "", "A meaningful identifier for the source device, e.g. 'ColdCard 1'")
+	shareCmd.Flags().StringP("cryptocurrency", "c", "", "The cryptocurrency (or a list) that the seed is applicable to (e.g 'Bitcoin')")
 	shareCmd.Flags().BoolP("fileparts", "f", false, "Write parts into separate files per part, named for the prefix and part number")
 	shareCmd.Flags().BoolP("quiet", "q", false, "Do not write shares to standard output")
 	shareCmd.Flags().StringP("mnemonic", "m", "", "The BIP39 mnemonic phrase. Omit to read from pipe (stdin), or redirect ('<')")
@@ -93,7 +93,7 @@ func validParams(parts int, threshold int, quiet bool, fileparts bool) error {
 	return nil
 }
 
-func execute(mnemonic string, parts int, threshold int, prefix string, device string, fileparts bool) error {
+func execute(mnemonic string, parts int, threshold int, prefix string, cryptocurrency string, quiet bool, fileparts bool) error {
 	if mnemonic == "" {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
@@ -109,16 +109,18 @@ func execute(mnemonic string, parts int, threshold int, prefix string, device st
 	} else {
 		fmt.Printf("Sharing seed in %d parts, requiring %d shares to recover secret\n\n", parts, threshold)
 
-		for part, share := range shares {
-			fmt.Printf("%s-%d-of-%d: %s\n", prefix, part+1, parts, share)
+		if !quiet {
+			for part, share := range shares {
+				fmt.Printf("%s-%d-of-%d: %s\n", prefix, part+1, parts, share)
+			}
+			fmt.Println()
 		}
-
 		if fileparts {
-			fmt.Println("\nFiles for each part have been created:")
-			return fileShare.MakeFiles(parts, threshold, prefix, device, shares)
+			fmt.Println("Files for each part have been created")
+			return fileShare.MakeFiles(parts, threshold, prefix, cryptocurrency, shares)
 
 		} else {
-			fmt.Println("\nRecord and store each share separately")
+			fmt.Println("Record and store each share separately")
 		}
 	}
 
