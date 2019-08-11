@@ -33,7 +33,8 @@ information:
   toolLocation: The tool used to create the shared secrets and to recombine them can be found at https://github.com/cloudbusting/shareseed
   whatIsASeed: A BIP39 seed is used to derive public/private key pairs, in this case to secure cryptocurreny (e.g. Bitcoin)
   whatShouldIDoWithTheRecoveredSecret: If you have sufficient shares to recombine and recover the secret, you should initialise a hardware wallet, using the seed to recover the addresses and stored funds
-share: %s`
+part: %d
+secret: %s`
 		if err := writePart(template, prefix, i+1, parts, shares[i]); err != nil {
 			return err
 		}
@@ -47,7 +48,7 @@ func writePart(template string, prefix string, part int, parts int, share string
 		return err
 	} else {
 		defer file.Close()
-		if _, err := fmt.Fprintf(file, template, share); err != nil {
+		if _, err := fmt.Fprintf(file, template, part, share); err != nil {
 			return err
 		}
 		return file.Sync()
