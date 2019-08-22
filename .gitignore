@@ -12,4 +12,5 @@
 *.out
 
 .idea/
-*.share.yaml
+*.share.txt
+shareseed

@@ -45,24 +45,24 @@ Specify the number of parts to share the secret in, and the number of parts requ
 
 Outputs:
 A set of numbered parts comprising a 2-digit hex number and seed words. The hex number and seed words represent the shareable part. 
-Optionally creates share parts and/or QR code files. You would write these to USB drives, for example (with this executable for good measure).
+Optionally creates share parts files. You might then write these files to USB drives (with this executable for good measure).
 
-Note that specifying the mnemonic seed phrase using the --mnemonic flag may leave the phrase in the shell history, which could have serious security risks. Consider HISTCONTROL settings, or redirect input.
+Warning:
+Specifying the mnemonic seed phrase using the --mnemonic flag may leave the phrase in the shell history, which could have serious security risks. Consider HISTCONTROL settings, or redirect input.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		mnemonic, _ := cmd.Flags().GetString("mnemonic")
 		parts, _ := cmd.Flags().GetInt("parts")
 		threshold, _ := cmd.Flags().GetInt("threshold")
-		prefix, _ := cmd.Flags().GetString("prefix")
 		cryptocurrency, _ := cmd.Flags().GetString("cryptocurrency")
 		quiet, _ := cmd.Flags().GetBool("quiet")
-		fileparts, _ := cmd.Flags().GetBool("fileparts")
+		fileparts, _ := cmd.Flags().GetString("fileparts")
 
 		if err := validParams(parts, threshold, quiet, fileparts); err != nil {
 			return err
 		}
 
-		return execute(mnemonic, parts, threshold, prefix, cryptocurrency, quiet, fileparts)
+		return executeShare(mnemonic, parts, threshold, fileparts, cryptocurrency, quiet)
 	},
 }
 
@@ -70,14 +70,13 @@ func init() {
 	rootCmd.AddCommand(shareCmd)
 	shareCmd.Flags().IntP("parts", "p", 5, "The number of parts to produce")
 	shareCmd.Flags().IntP("threshold", "t", 3, "The number of parts required in combination to reproduce the BIP39 mnemonic")
-	shareCmd.Flags().String("prefix", "", "A prefix for the shared part number. Helps identify part sets, e.g. 'BTC'")
-	shareCmd.Flags().StringP("cryptocurrency", "c", "", "The cryptocurrency (or a list) that the seed is applicable to (e.g 'Bitcoin')")
-	shareCmd.Flags().BoolP("fileparts", "f", false, "Write parts into separate files per part, named for the prefix and part number")
+	shareCmd.Flags().StringP("cryptocurrency", "c", "", "The cryptocurrency (or a list) that the seed is applicable to (e.g 'Bitcoin'). For output file information only.")
+	shareCmd.Flags().StringP("fileparts", "f", "", "Write parts into separate files per part, named for the prefix (e.g. 'BTC') and part number")
 	shareCmd.Flags().BoolP("quiet", "q", false, "Do not write shares to standard output")
-	shareCmd.Flags().StringP("mnemonic", "m", "", "The BIP39 mnemonic phrase. Omit to read from pipe (stdin), or redirect ('<')")
+	shareCmd.Flags().StringP("mnemonic", "m", "", "The BIP39 mnemonic phrase. Omit to read from stdin, i.e. pipe ('|') or redirect ('<') from a file")
 }
 
-func validParams(parts int, threshold int, quiet bool, fileparts bool) error {
+func validParams(parts int, threshold int, quiet bool, fileparts string) error {
 	if parts < 2 || parts > 255 {
 		return ErrInvalidPartsSize
 	}
@@ -87,13 +86,13 @@ func validParams(parts int, threshold int, quiet bool, fileparts bool) error {
 	if threshold > parts {
 		return ErrThresholdGreaterThanParts
 	}
-	if quiet && !fileparts {
+	if quiet && fileparts == "" {
 		return ErrNoOutputOptions
 	}
 	return nil
 }
 
-func execute(mnemonic string, parts int, threshold int, prefix string, cryptocurrency string, quiet bool, fileparts bool) error {
+func executeShare(mnemonic string, parts int, threshold int, fileparts string, cryptocurrency string, quiet bool) error {
 	if mnemonic == "" {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
@@ -111,14 +110,13 @@ func execute(mnemonic string, parts int, threshold int, prefix string, cryptocur
 
 		if !quiet {
 			for part, share := range shares {
-				fmt.Printf("%s-%d-of-%d: %s\n", prefix, part+1, parts, share)
+				fmt.Printf("%s-%d-of-%d: %s\n", fileparts, part+1, parts, share)
 			}
 			fmt.Println()
 		}
-		if fileparts {
-			fmt.Println("Files for each part have been created")
-			return fileShare.MakeFiles(parts, threshold, prefix, cryptocurrency, shares)
-
+		if fileparts != "" {
+			fmt.Printf("Files for each part have been created using prefix '%s'\n", fileparts)
+			return fileShare.MakeFiles(parts, threshold, fileparts, cryptocurrency, shares)
 		} else {
 			fmt.Println("Record and store each share separately")
 		}
