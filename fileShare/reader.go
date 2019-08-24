@@ -3,6 +3,7 @@ package fileShare
 import (
 	"bufio"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,22 +38,24 @@ func getSecretFromFile(name string) (string, error) {
 		return "", err
 	} else {
 		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		secret := ""
-
-		for scanner.Scan() {
-			if strings.HasPrefix(strings.TrimSpace(scanner.Text()), "secret=") {
-				secret = scanner.Text()
-				break
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			return "", err
-		}
-		if secret == "" {
-			return "", ErrSecretNotFoundInFile
-		}
-
-		return strings.TrimSpace(strings.TrimPrefix(secret,"secret=")), nil
+		return getSecretFromReader(file)
 	}
+}
+
+func getSecretFromReader(reader io.Reader) (string, error) {
+	scanner := bufio.NewScanner(reader)
+	secret := ""
+	for scanner.Scan() {
+		if strings.HasPrefix(strings.TrimSpace(scanner.Text()), "secret=") {
+			secret = scanner.Text()
+			break
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	if secret == "" {
+		return "", ErrSecretNotFoundInFile
+	}
+	return strings.Join(strings.Fields(strings.TrimPrefix(secret, "secret=")), " "), nil
 }

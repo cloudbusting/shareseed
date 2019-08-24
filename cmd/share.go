@@ -40,21 +40,28 @@ var shareCmd = &cobra.Command{
 	Long: `Share
 -----
 Inputs:
-Provide a BIP39 mnemonic phrase (from stdin, or as a parameter---not recommended, see below).
-Specify the number of parts to share the secret in, and the number of parts required to successfully recombine (the threshold).
+Provide a BIP39 mnemonic phrase (from stdin, or as a parameter---not recommended, see below). Specify the 
+number of parts to share the secret in, and the number of parts required to successfully recombine (the threshold).
 
 Outputs:
-A set of numbered parts comprising a 2-digit hex number and seed words. The hex number and seed words represent the shareable part. 
-Optionally creates share parts files. You might then write these files to USB drives (with this executable for good measure).
+A set of numbered parts comprising a 2-digit hex number and seed words. The hex number and seed words represent
+the shareable part. Optionally creates share parts files. You might then write these files to USB drives (with
+this executable for good measure).
 
 Warning:
-Specifying the mnemonic seed phrase using the --mnemonic flag may leave the phrase in the shell history, which could have serious security risks. Consider HISTCONTROL settings, or redirect input.
+Specifying the mnemonic seed phrase using the --mnemonic flag may leave the phrase in the shell history, which
+could have serious security risks. Consider HISTCONTROL settings, or redirect input.
+
+Warning:
+The seed alone may be insufficient to allow simple recovery (particularly by beneficiaries of your estate).
+Different wallets use might use different implementations of BIP39 and/or derivation paths. You should also
+specify the wallet when sharing parts (or record this information with the physical media).
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		mnemonic, _ := cmd.Flags().GetString("mnemonic")
 		parts, _ := cmd.Flags().GetInt("parts")
 		threshold, _ := cmd.Flags().GetInt("threshold")
-		cryptocurrency, _ := cmd.Flags().GetString("cryptocurrency")
+		wallet, _ := cmd.Flags().GetString("wallet")
 		quiet, _ := cmd.Flags().GetBool("quiet")
 		fileparts, _ := cmd.Flags().GetString("fileparts")
 
@@ -62,7 +69,7 @@ Specifying the mnemonic seed phrase using the --mnemonic flag may leave the phra
 			return err
 		}
 
-		return executeShare(mnemonic, parts, threshold, fileparts, cryptocurrency, quiet)
+		return executeShare(mnemonic, parts, threshold, fileparts, wallet, quiet)
 	},
 }
 
@@ -70,7 +77,7 @@ func init() {
 	rootCmd.AddCommand(shareCmd)
 	shareCmd.Flags().IntP("parts", "p", 5, "The number of parts to produce")
 	shareCmd.Flags().IntP("threshold", "t", 3, "The number of parts required in combination to reproduce the BIP39 mnemonic")
-	shareCmd.Flags().StringP("cryptocurrency", "c", "", "The cryptocurrency (or a list) that the seed is applicable to (e.g 'Bitcoin'). For output file information only.")
+	shareCmd.Flags().StringP("wallet", "w", "", "The wallet that the seed is applicable to (e.g 'ColdCard'). For output file information only.")
 	shareCmd.Flags().StringP("fileparts", "f", "", "Write parts into separate files per part, named for the prefix (e.g. 'BTC') and part number")
 	shareCmd.Flags().BoolP("quiet", "q", false, "Do not write shares to standard output")
 	shareCmd.Flags().StringP("mnemonic", "m", "", "The BIP39 mnemonic phrase. Omit to read from stdin, i.e. pipe ('|') or redirect ('<') from a file")
@@ -92,7 +99,7 @@ func validParams(parts int, threshold int, quiet bool, fileparts string) error {
 	return nil
 }
 
-func executeShare(mnemonic string, parts int, threshold int, fileparts string, cryptocurrency string, quiet bool) error {
+func executeShare(mnemonic string, parts int, threshold int, fileparts string, wallet string, quiet bool) error {
 	if mnemonic == "" {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
@@ -116,7 +123,7 @@ func executeShare(mnemonic string, parts int, threshold int, fileparts string, c
 		}
 		if fileparts != "" {
 			fmt.Printf("Files for each part have been created using prefix '%s'\n", fileparts)
-			return fileShare.MakeFiles(parts, threshold, fileparts, cryptocurrency, shares)
+			return fileShare.MakeFiles(parts, threshold, fileparts, wallet, shares)
 		} else {
 			fmt.Println("Record and store each share separately")
 		}

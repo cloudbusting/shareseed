@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-func MakeFiles(parts int, threshold int, prefix string, cryptocurrency string, shares []string) error {
-	template := partsGuidance(parts) + "\n" + cryptocurrencyGuidance(cryptocurrency) + "\n" + thresholdGuidance(threshold) + `
+func MakeFiles(parts int, threshold int, prefix string, wallet string, shares []string) error {
+	template := partsGuidance(parts) + "\n" + walletGuidance(wallet) + "\n" + thresholdGuidance(threshold) + `
 # The tool used to create the shared secrets and to recombine them can be found at https://github.com/cloudbusting/shareseed
 # A BIP39 seed is used to derive public/private key pairs, in this case to secure cryptocurrency (e.g. Bitcoin)
 # If you have sufficient shares to recombine and recover the secret, you should initialise a hardware wallet, using the seed to recover the addresses and stored funds
@@ -26,14 +26,14 @@ func partsGuidance(parts int) string {
 	return fmt.Sprintf("# This file contains a shared secret, one of %d parts comprising a BIP39 seed.", parts)
 }
 
-func cryptocurrencyGuidance(cryptocurrency string) string {
-	var cryptocurrencyGuidance string
-	if cryptocurrency == "" {
-		cryptocurrencyGuidance = fmt.Sprintf("# Information to identity the applicable cryptocurrency was not provided. It may be Bitcoin, or potentially many cryptocurrencies.")
+func walletGuidance(wallet string) string {
+	var walletGuidance string
+	if wallet == "" {
+		walletGuidance = fmt.Sprintf("# Information to identity the applicable wallet was not provided.")
 	} else {
-		cryptocurrencyGuidance = fmt.Sprintf("# The seed applied to the cryptocurrency '%s'", cryptocurrency)
+		walletGuidance = fmt.Sprintf("# The seed was used with the wallet '%s'", wallet)
 	}
-	return cryptocurrencyGuidance
+	return walletGuidance
 }
 
 func thresholdGuidance(threshold int) string {

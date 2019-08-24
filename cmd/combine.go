@@ -26,16 +26,20 @@ import (
 var combineCmd = &cobra.Command{
 	Use:   "combine",
 	Short: "Combine a quorum of shared parts to reproduce the original secret BIP39 mnemonic phrase",
-	Long: `Combine
+	Long:  `Combine
 -------
 Inputs:
 Either a set of file shares containing shared secrets, or a set of shared secrets passed directly in parameters.
 
 Outputs:
-Prints the recovered seed to standard output. You must provide sufficient shares to recover the correct seed.
-i.e. you must provide at least shares equal to required threshold; this is stated in file shares, but you may not have this information if
-you are working from other media. 
+Prints the recovered seed to standard output. You must provide sufficient shares to recover the correct seed. 
+i.e. you must provide at least shares equal to required threshold; this is stated in file shares, but you may not
+have this information if you are working from other media. 
 
+Note:
+Different wallets may treat the same phrase differently, meaning that if the phrase was created with one wallet
+and restored in another, that wallet may show no coins. In this case try to establish the wallet the seed was
+created from and refer to https://walletsrecovery.org/ for guidance.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		secrets, _ := cmd.Flags().GetStringSlice("secret")

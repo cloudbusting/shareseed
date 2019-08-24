@@ -30,7 +30,7 @@ Use Shamir Secret Sharing to protect BIP39 mnemonic seeds by sharing in parts, a
 
 Warnings
 --------
-Test this utility with a unimportant seed to share and recombine parts to understand its function. 
+Test this utility with an unimportant seed to share and recombine parts to understand its function. 
 (Valid test mnemonic seeds can be created at https://iancoleman.io/bip39/).
 
 To reduce the possible risk of a malware infection capturing the inputs or outputs of this utility, it is strongly 
